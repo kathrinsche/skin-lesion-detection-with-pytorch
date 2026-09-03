@@ -1,0 +1,32 @@
+seed: 42
+
+data:
+  metadata_csv: data/raw/HAM10000/HAM10000_metadata.csv
+  image_dir: data/raw/HAM10000/images
+  task: multiclass
+  image_size: 224
+  train_fraction: 0.70
+  val_fraction: 0.15
+  test_fraction: 0.15
+
+training:
+  batch_size: 32
+  epochs: 30
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  num_workers: 4
+  pretrained: true
+  freeze_backbone: false
+  class_weighting: true
+  early_stopping_patience: 7
+
+augmentation:
+  horizontal_flip: true
+  vertical_flip: true
+  rotation_degrees: 20
+  color_jitter: true
+
+output:
+  checkpoint: checkpoints/best.pt
+  metrics_csv: results/training_metrics.csv
+  split_csv: results/data_split.csv
