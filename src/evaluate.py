@@ -5,15 +5,15 @@ import yaml
 import torch
 from torch.utils.data import DataLoader
 
-from .data import (
+from data import (
     CLASS_NAMES,
     HAM10000Dataset,
     load_metadata,
     make_transforms,
     patient_split,
 )
-from .metrics import classification_metrics
-from .model import build_model
+from metrics import classification_metrics
+from model import build_model
 
 
 def main():
