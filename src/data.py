@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import random
 import numpy as np
@@ -30,7 +31,9 @@ def load_metadata(cfg):
         raise ValueError(f"Missing metadata columns: {sorted(missing)}")
 
     df["image_path"] = df["image_id"].map(lambda x: str(image_dir / f"{x}.jpg"))
-    df = df[df["image_path"].map(Path.exists)].copy()
+    exists = df["image_path"].apply(os.path.exists)
+    my_df = df[exists].copy()
+    df = my_df
 
     if df.empty:
         raise FileNotFoundError("No images found. Check image_dir and image_id filenames.")

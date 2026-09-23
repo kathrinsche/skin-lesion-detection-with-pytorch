@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from .data import (
+from data import (
     CLASS_NAMES,
     HAM10000Dataset,
     class_weights,
@@ -15,8 +15,8 @@ from .data import (
     patient_split,
     seed_everything,
 )
-from .metrics import classification_metrics
-from .model import build_model
+from metrics import classification_metrics
+from model import build_model
 
 
 def run_epoch(model, loader, criterion, optimizer, device, train=True):
