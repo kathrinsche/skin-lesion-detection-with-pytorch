@@ -45,8 +45,8 @@ The implementation performs the split at patient level when `patient_id` is avai
 ## 3. Minimal test
 
 ```bash
-python -m src.train --config configs/minimal.yaml
-python -m src.evaluate --config configs/minimal.yaml --checkpoint checkpoints/best.pt
+python src/train.py --config configs/minimal.yaml
+python src/evaluate.py --config configs/minimal.yaml --checkpoint checkpoints/best.pt
 ```
 
 The minimal configuration is deliberately small and is intended to verify the complete pipeline, not to produce scientifically meaningful performance estimates.
@@ -54,8 +54,8 @@ The minimal configuration is deliberately small and is intended to verify the co
 ## 4. Realistic run
 
 ```bash
-python -m src.train --config configs/realistic.yaml
-python -m src.evaluate --config configs/realistic.yaml --checkpoint checkpoints/best.pt
+python src/train.py --config configs/realistic.yaml
+python src/evaluate.py --config configs/realistic.yaml --checkpoint checkpoints/best.pt
 ```
 
 Before a scientific experiment, inspect the dataset composition, class imbalance, split sizes and preprocessing choices.
