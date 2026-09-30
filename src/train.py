@@ -49,14 +49,37 @@ def run_epoch(model, loader, criterion, optimizer, device, train=True):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
+    parser.add_argument(
+        "--input-dir",
+        required=True,
+        help="Directory containing the input dataset"
+    )
+    parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="Directory for checkpoints and training results"
+    )
     args = parser.parse_args()
 
     with open(args.config, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
+    input_dir = Path(args.input_dir).resolve()
+    output_dir = Path(args.output_dir).resolve()
+
+    if not input_dir.is_dir():
+        raise FileNotFoundError(
+            f"Input directory not found: {input_dir}"
+        )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"Input directory:  {input_dir}")
+    print(f"Output directory: {output_dir}")
+
     seed_everything(cfg["seed"])
 
-    df = load_metadata(cfg)
+    df = load_metadata(cfg, input_dir)
     split_df = patient_split(
         df,
         cfg["seed"],
@@ -65,8 +88,9 @@ def main():
         cfg["data"]["test_fraction"],
     )
 
-    Path(cfg["output"]["split_csv"]).parent.mkdir(parents=True, exist_ok=True)
-    split_df.to_csv(cfg["output"]["split_csv"], index=False)
+    split_path = output_dir / cfg["output"]["split"]
+    split_path.parent.mkdir(parents=True, exist_ok=True)
+    split_df.to_csv(split_path, index=False)
 
     train_df = split_df[split_df["split"] == "train"].copy()
     val_df = split_df[split_df["split"] == "val"].copy()
@@ -91,7 +115,7 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
-    print(f"Train/Val/Test: {len(train_df)}/{len(val_df)}/{len(split_df[split_df['split']=='test'])}")
+    print(f"Train/Val/Test: {len(train_df)}/{len(val_df)}/{len(split_df[split_df['split'] == 'test'])}")
 
     model = build_model(
         num_classes=len(CLASS_NAMES),
@@ -132,13 +156,16 @@ def main():
         if val_metrics["macro_f1"] > best_f1:
             best_f1 = val_metrics["macro_f1"]
             patience = 0
-            Path(cfg["output"]["checkpoint"]).parent.mkdir(parents=True, exist_ok=True)
+
+            checkpoint_path = output_dir / cfg["output"]["checkpoint"]
+            checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+
             torch.save({
                 "model_state_dict": model.state_dict(),
                 "class_names": CLASS_NAMES,
                 "config": cfg,
                 "best_val_macro_f1": best_f1,
-            }, cfg["output"]["checkpoint"])
+            }, checkpoint_path)
             print("Saved best checkpoint.")
         else:
             patience += 1
@@ -146,8 +173,9 @@ def main():
                 print("Early stopping.")
                 break
 
-    Path(cfg["output"]["metrics_csv"]).parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(history).to_csv(cfg["output"]["metrics_csv"], index=False)
+    metrics_path = output_dir / cfg["output"]["metrics"]
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(history).to_csv(metrics_path, index=False)
 
 
 if __name__ == "__main__":

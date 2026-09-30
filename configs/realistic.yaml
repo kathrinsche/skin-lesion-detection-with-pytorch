@@ -1,8 +1,8 @@
 seed: 42
 
 data:
-  metadata_csv: data/raw/HAM10000/HAM10000_metadata.csv
-  image_dir: data/raw/HAM10000/images
+  metadata_file: HAM10000_metadata.csv
+  image_subdir: images
   task: multiclass
   image_size: 224
   train_fraction: 0.70
@@ -28,5 +28,5 @@ augmentation:
 
 output:
   checkpoint: checkpoints/best.pt
-  metrics_csv: results/training_metrics.csv
-  split_csv: results/data_split.csv
+  metrics: results/training_metrics.csv
+  split: results/data_split.csv

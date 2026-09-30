@@ -19,13 +19,33 @@ from model import build_model
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
-    parser.add_argument("--checkpoint", required=True)
+    parser.add_argument(
+        "--input-dir",
+        required=True,
+        help="Directory containing the input dataset"
+    )
+    parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="Directory for evaluation results"
+    )
     args = parser.parse_args()
 
     with open(args.config, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
-    df = load_metadata(cfg)
+    input_dir = Path(args.input_dir).resolve()
+    output_dir = Path(args.output_dir).resolve()
+
+    if not input_dir.is_dir():
+        raise FileNotFoundError(
+            f"Input directory not found: {input_dir}"
+        )
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"Input directory:  {input_dir}")
+    print(f"Output directory: {output_dir}")
+    df = load_metadata(cfg, input_dir)
     split_df = patient_split(
         df,
         cfg["seed"],
@@ -44,7 +64,12 @@ def main():
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    checkpoint = torch.load(args.checkpoint, map_location=device)
+    checkpoint_path = output_dir / cfg["output"]["checkpoint"]
+    if not checkpoint_path.is_file():
+        raise FileNotFoundError(
+            f"Checkpoint not found: {checkpoint_path}"
+        )
+    checkpoint = torch.load(checkpoint_path, map_location=device)
 
     model = build_model(
         num_classes=len(CLASS_NAMES),
@@ -65,7 +90,7 @@ def main():
 
     print(json.dumps(metrics, indent=2))
 
-    out = Path("results/test_metrics.json")
+    out = output_dir / "results/test_metrics.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
 

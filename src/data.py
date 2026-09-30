@@ -20,9 +20,21 @@ def seed_everything(seed: int):
     torch.cuda.manual_seed_all(seed)
 
 
-def load_metadata(cfg):
-    csv_path = Path(cfg["data"]["metadata_csv"])
-    image_dir = Path(cfg["data"]["image_dir"])
+def load_metadata(cfg, input_dir):
+    input_dir = Path(input_dir)
+    csv_path = input_dir / cfg["data"]["metadata_file"]
+    image_dir = input_dir / cfg["data"]["image_subdir"]
+
+    if not csv_path.is_file():
+        raise FileNotFoundError(
+            f"Metadata file not found: {csv_path}"
+        )
+
+    if not image_dir.is_dir():
+        raise FileNotFoundError(
+            f"Image directory not found: {image_dir}"
+        )
+
     df = pd.read_csv(csv_path)
 
     required = {"image_id", "dx"}
