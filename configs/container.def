@@ -1,0 +1,79 @@
+Bootstrap: docker
+From: python:3.12-slim
+
+%labels
+    Author Kathrin Sobe
+    Description "PyTorch ML training for skin lesion classification"
+    Version v0.2
+
+%help
+    Skin lesion classification training container.
+
+    Runtime mount points:
+        /input   - input dataset (read-only recommended)
+        /output  - training results and model checkpoints
+
+    Example container run:
+
+        singularity run \
+          --bind /host/path/to/data:/input:ro \
+          --bind /host/path/to/output:/output:rw \
+          container.sif \
+          --config /app/configs/minimal.yaml
+
+    Build and execution of encrypted container:
+        . /host/path/to/script/build_encrypted_apptainer configs/container.def image.sif
+        apptainer exec \
+          --pem-path=image.key \
+          --bind /host/path/to/data:/input:ro \
+          --bind /host/path/to/output:/output:rw \
+          image.sif \
+          python /app/src/train.py --input-dir /input --output-dir /output --config /app/configs/minimal.yaml
+
+%environment
+    export APPLICATION_DIR=/app
+    export INPUT_DIR=/input
+    export OUTPUT_DIR=/output
+    export PYTHONUNBUFFERED=1
+
+%files
+    requirements.txt /app/requirements.txt
+    src              /app/src
+    configs          /app/configs
+
+%post
+    pip install --no-cache-dir --upgrade pip
+    pip install --no-cache-dir -r /app/requirements.txt
+
+    # Fixed mount points.
+    # Actual data is NOT copied into the container.
+    mkdir -p /input
+    mkdir -p /output
+
+%runscript
+    set -eu
+
+    echo "Application: /app"
+    echo "Input:       /input"
+    echo "Output:      /output"
+
+    if [ ! -d /input ]; then
+        echo "ERROR: /input does not exist."
+        exit 1
+    fi
+
+    if [ ! -d /output ]; then
+        echo "ERROR: /output does not exist."
+        exit 1
+    fi
+
+    if [ ! -w /output ]; then
+        echo "ERROR: /output is not writable."
+        echo "Check the host directory permissions and the --bind option."
+        exit 1
+    fi
+
+    exec python /app/src/train.py \
+        --input-dir /input \
+        --output-dir /output \
+        "$@"
